@@ -1,0 +1,33 @@
+@keycolor:#ff0;
+
+html, body {
+    margin:0;
+    font-size: 15px;
+}
+
+.popup {
+    position: fixed;
+    top: 1.5em;
+    left: 1.5em;
+    background:fade(#fff,50%);
+    padding: 0.5em;
+    display: none;
+    &.active {
+        display: block;
+    }
+    .title {
+        font-size: 1.2rem;
+
+    }
+    .price {
+
+    }
+    .link {
+        display: inline-block;
+        background: #000;
+        color: #fff;
+        text-decoration: none;
+        border: 1px solid #fff;
+        padding: 0.5em;
+    }
+}

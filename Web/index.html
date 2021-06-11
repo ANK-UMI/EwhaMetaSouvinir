@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="popup">
+        <div class="title"></div>
+        <div class="price"></div>
+        <a class="link" href="/" target="_blank">GO TO SHOP</a>
+
+    </div>
+    <script src="jqeury.min.js"></script>
+    <script>
+        var $ = jQuery.noConflict(true);
+
+        $('.aa').on('click',()=>{
+            $(this).addClass('bb');
+        });
+
+        var json = $.getJSON("app.json");
+    </script>
+
+<script type="module">
+
+    import * as THREE from './threejs/three.module.js';
+
+    import { OrbitControls } from './threejs/OrbitControls.js';
+    import { GLTFLoader } from './threejs/GLTFLoader.js';
+    import { RGBELoader } from './threejs/RGBELoader.js';
+    import { RoughnessMipmapper } from './threejs/RoughnessMipmapper.js';
+
+    let camera, scene, renderer;
+
+    var mainmodel;
+    var controls;
+    var targetpos;
+
+    init();
+    render();
+    update();
+
+    function init() {
+
+        const container = document.createElement( 'div' );
+        document.body.appendChild( container );
+
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
+        camera.position.set( - 1.8, 0.6, 2.7 );
+
+        scene = new THREE.Scene();
+
+        targetpos = new THREE.Vector3();
+        new RGBELoader()
+            .setDataType( THREE.UnsignedByteType )
+            .setPath( 'hdr/' )
+            .load( 'royal_esplanade_1k.hdr', function ( texture ) {
+
+                const envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+
+                scene.background = envMap;
+                scene.environment = envMap;
+
+                texture.dispose();
+                pmremGenerator.dispose();
+
+                render();
+
+                // model
+
+                // use of RoughnessMipmapper is optional
+                const roughnessMipmapper = new RoughnessMipmapper( renderer );
+
+                const loader = new GLTFLoader().setPath( 'models/newShoes/' );
+                loader.load( 'shoes.gltf', function ( gltf ) {
+
+                    gltf.scene.traverse( function ( child ) {
+
+                        if ( child.isMesh ) {
+                            mainmodel = child;
+                            // TOFIX RoughnessMipmapper seems to be broken with WebGL 2.0
+                            // roughnessMipmapper.generateMipmaps( child.material );
+                            child.scale.set(0.5,0.5,0.5);
+                        }
+
+                    } );
+
+                    scene.add( gltf.scene );
+
+                    roughnessMipmapper.dispose();
+
+                    render();
+
+                } );
+
+            } );
+
+        renderer = new THREE.WebGLRenderer( { antialias: true } );
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild( renderer.domElement );
+
+        const pmremGenerator = new THREE.PMREMGenerator( renderer );
+        pmremGenerator.compileEquirectangularShader();
+
+        controls = new OrbitControls( camera, renderer.domElement );
+        controls.addEventListener( 'change', render ); // use if there is no animation loop
+        controls.minDistance = 2;
+        controls.maxDistance = 10;
+        controls.target.set( 0, 0, - 0.2 );
+        controls.update();
+
+        window.addEventListener( 'resize', onWindowResize );
+
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        render();
+
+        
+    }
+
+    //
+
+    function render() {
+        renderer.render( scene, camera );
+    }
+
+    function update() {
+        requestAnimationFrame(update);
+
+        //var topos = controls.target.lerp(targetpos,0.2);
+        //controls.target.set(topos.x,topos.y,topos.z);
+        controls.update();
+    }
+
+    renderer.domElement.addEventListener("click", onclick, true);
+  var selectedObject;
+  var raycaster = new THREE.Raycaster();
+  function onclick(e) {
+  var mouse = new THREE.Vector2();
+  mouse.x = (e.clientX/window.innerWidth)*2-1;
+  mouse.y = -(e.clientY/window.innerHeight)*2+1;
+  raycaster.setFromCamera(mouse, camera);
+  var intersects = raycaster.intersectObjects(scene.children,true); //array
+ if (intersects.length > 0) {
+ selectedObject = intersects[0].object;
+    while(selectedObject.parent.type == "Object3D" && selectedObject.parent.name !== "package")
+        selectedObject = selectedObject.parent;
+ 	}
+     var key = selectedObject.name;
+     var pos = selectedObject.position;
+     targetpos = pos;
+     popUp(app[key]);
+}
+
+function popUp(obj) {
+    $('.popup').addClass("active");
+    $('.popup .title').html(obj.name);
+    $('.popup .price').html(obj.price);
+    $('.popup .link').attr('href',obj.link);
+}
+
+var app = {
+    "shoes":{
+        name:"Super Shoes",
+        price:5000,
+        link:"//www.naver.com"
+    },
+    "axe":{
+        name:"Super Axe",
+        price:10000,
+        link:"//google.com"
+    },
+    "flower":{
+        name:"Super Flower",
+        price:10002,
+        link:"//google.com"
+    }
+}
+</script>
+    
+</body>
+</html>
